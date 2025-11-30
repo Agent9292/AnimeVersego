@@ -397,3 +397,41 @@ section h2{
   50%{ opacity:0.6 }
   100%{ opacity:1 }
 }
+
+/* Search Input Styling - tumhare theme ke saath match */
+.search-input {
+  background: var(--glass);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  width: 180px;
+  backdrop-filter: blur(10px);
+  display: none; /* hidden by default */
+  transition: all var(--transition);
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(124,58,237,0.15);
+  transform: scale(1.02);
+}
+
+/* Mobile Navbar Animation - tumhare existing CSS ke saath */
+@media (max-width: 1000px) {
+  #side-navbar {
+    transform: translateX(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition);
+  }
+  
+  #side-navbar.active {
+    transform: translateX(0);
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
