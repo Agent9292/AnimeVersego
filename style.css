@@ -371,7 +371,12 @@ section h2{
     transition: all var(--transition) !important;
     border-radius: 0 16px 16px 0 !important;
     z-index: 9999 !important;
-    display: block !important;  /* ← YE IMPORTANT */
+    display: block !important;
+    
+    /* 🔥 YE 3 LINES ADD KARO - SOLID BACKGROUND */
+    background: rgba(11, 20, 32, 0.98) !important;
+    backdrop-filter: blur(20px) !important;
+    border-right: 1px solid rgba(255,255,255,0.2) !important;
   }
   
   #side-navbar.active {
