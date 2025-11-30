@@ -135,8 +135,10 @@ function attachReadMoreListeners() {
 }
 
 // -------------------------------
-// SEARCH TOGGLE + FILTER (FIXED)
+// SEARCH TOGGLE + FILTER
 // -------------------------------
+
+// ⭐ MOBILE REORDER FUNCTION
 function reorderForMobile(isSearchOpen) {
     const slides = document.getElementById('slides-section');
     const anime = document.getElementById('anime-section');
@@ -146,9 +148,9 @@ function reorderForMobile(isSearchOpen) {
 
     if (window.innerWidth <= 768) {
         if (isSearchOpen) {
-            main.prepend(anime);
+            main.prepend(anime); // Anime upar
         } else {
-            main.prepend(slides);
+            main.prepend(slides); // Slides upar
         }
     }
 }
@@ -162,41 +164,22 @@ function toggleSearch() {
     const isOpen = searchInput.style.display === 'block';
 
     if (isOpen) {
-        // Close search
         searchInput.style.display = 'none';
         searchInput.value = '';
-        searchInput.style.paddingLeft = '';
-        searchInput.style.paddingRight = '';
-        searchInput.style.width = '';
-        searchInput.style.marginLeft = '';
         header.classList.remove('search-active');
-        reorderForMobile(false);
+        reorderForMobile(false); // Search off → slides upar
         renderAnimeCards(allAnimeData);
     } else {
-        // Open search - ⭐ LEFT SPACE FIXED
         searchInput.style.display = 'block';
-        searchInput.style.paddingLeft = '45px';      // Proper left space
-        searchInput.style.paddingRight = '50px';     // Right space for button
-        searchInput.style.width = 'calc(100% - 95px)';
-        searchInput.style.marginLeft = '8px';
         searchInput.focus();
         searchInput.select();
         header.classList.add('search-active');
-        reorderForMobile(true);
+        reorderForMobile(true); // Search on → anime upar
     }
 }
 
 function handleSearch() {
     const searchTerm = this.value.toLowerCase().trim();
-    
-    // Dynamic padding based on text length
-    if (this.value.length === 0) {
-        this.style.paddingLeft = '45px';
-    } else if (this.value.length < 10) {
-        this.style.paddingLeft = '25px';
-    } else {
-        this.style.paddingLeft = '15px';
-    }
 
     if (searchTerm === '') {
         renderAnimeCards(allAnimeData);
@@ -229,11 +212,6 @@ function handleEscape(e) {
     if (e.key === 'Escape') {
         const searchInput = document.getElementById('search-input');
         if (searchInput) {
-            // Full reset
-            searchInput.style.paddingLeft = '';
-            searchInput.style.paddingRight = '';
-            searchInput.style.width = '';
-            searchInput.style.marginLeft = '';
             searchInput.style.display = 'none';
             searchInput.value = '';
             renderAnimeCards(allAnimeData);
@@ -316,7 +294,9 @@ function nextSlide() {
 }
 
 function prevSlide() {
-    currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1;
+    currentSlide =
+        currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1;
+
     updateCarousel();
 }
 
