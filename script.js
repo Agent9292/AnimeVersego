@@ -4,11 +4,14 @@ let slidesData = [];
 let currentSlide = 0;
 
 document.addEventListener('DOMContentLoaded', function() {
+    console.log('🚀 DOM loaded, starting fetch...');
     fetchAllData();
     setupEventListeners();
 });
 
 function setupEventListeners() {
+    console.log('🔧 Setting up event listeners...');
+    
     const menuBtn = document.getElementById('menu-btn');
     if (menuBtn) {
         console.log('✅ Menu button found!');
@@ -16,95 +19,104 @@ function setupEventListeners() {
             console.log('🔥 Menu clicked!');
             toggleNavbar();
         });
+    } else {
+        console.error('❌ Menu button (#menu-btn) not found!');
     }
 
     const searchBtn = document.getElementById('search-btn');
-    if (searchBtn) searchBtn.addEventListener('click', toggleSearch);
+    if (searchBtn) {
+        searchBtn.addEventListener('click', toggleSearch);
+        console.log('✅ Search button found!');
+    } else {
+        console.error('❌ Search button (#search-btn) not found!');
+    }
 
     const searchInput = document.getElementById('search-input');
-    if (searchInput) searchInput.addEventListener('input', handleSearch);
+    if (searchInput) {
+        searchInput.addEventListener('input', handleSearch);
+        console.log('✅ Search input found!');
+    } else {
+        console.error('❌ Search input (#search-input) not found!');
+    }
 
     document.addEventListener('click', closeNavbarOutside);
     document.addEventListener('keydown', handleEscape);
 }
 
 function fetchAllData() {
+    console.log('📡 Fetching data...');
     fetchAnimeData();
     fetchSlidesData();
 }
 
 function fetchAnimeData() {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet1&tq=select%20*`;
-    fetch(url).then(res => res.text()).then(rep => {
-        const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
-        allAnimeData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
-        renderAnimeCards(allAnimeData);
-    }).catch(console.error);
+    console.log('🌐 Fetching anime data from:', url);
+    
+    fetch(url)
+        .then(res => {
+            console.log('📥 Response status:', res.status);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.text();
+        })
+        .then(rep => {
+            console.log('📄 Raw response length:', rep.length);
+            try {
+                const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
+                allAnimeData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
+                console.log('✅ Anime data loaded:', allAnimeData.length, 'rows');
+                renderAnimeCards(allAnimeData);
+            } catch (e) {
+                console.error('❌ JSON parse error:', e);
+            }
+        })
+        .catch(err => {
+            console.error('❌ Fetch anime error:', err);
+            document.getElementById('anime-list').innerHTML = '<div class="no-results"><p>❌ Data load failed! Check console.</p></div>';
+        });
 }
 
 function fetchSlidesData() {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet2&tq=select%20*`;
-    fetch(url).then(res => res.text()).then(rep => {
-        const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
-        slidesData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
-        renderSlides();
-    }).catch(console.error);
+    console.log('🌐 Fetching slides data from:', url);
+    
+    fetch(url)
+        .then(res => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.text();
+        })
+        .then(rep => {
+            try {
+                const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
+                slidesData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
+                console.log('✅ Slides data loaded:', slidesData.length, 'rows');
+                renderSlides();
+            } catch (e) {
+                console.error('❌ JSON parse error for slides:', e);
+            }
+        })
+        .catch(err => console.error('❌ Fetch slides error:', err));
 }
 
-// CREATE ANIME CARDS
-function createAnimeCards(data) {
-    if (data.length === 0) {
-        return '<div class="no-results"><p>🔍 No anime found! Try different keywords.</p></div>';
-    }
-
-    let html = '';
-    data.forEach(row => {
-        const no = row[0] || '';
-        const thumbnail = row[1] || '';
-        const name = row[2] || '';
-        const description = row[3] || '';
-        const link = row[4] || '';
-
-        const shortDesc = description.substring(0, 120);
-        const showReadMore = description.length > 120;
-
-        html += `
-            <div class="anime-card" data-name="${name?.toLowerCase()}">    
-                <div class="thumb">    
-                    <img src="${thumbnail}" alt="${name}" />    
-                </div>    
-                <h3>${name}</h3>    
-                <div class="description-container">    
-                    <p class="description short-desc">${shortDesc}${showReadMore ? '...' : ''}</p>    
-                    ${showReadMore ? `<span class="read-more-btn">Read more</span>` : ''}    
-                    <p class="full-desc" style="display: none;">${description}</p>    
-                </div>    
-                <div class="actions">    
-                    <a href="${link}" class="watch-btn" target="_blank">Watch Now</a>    
-                    <span class="meta-small">${no}</span>    
-                </div>    
-            </div>`;
-    });
-    return html;
-}
-
+// Baaki functions same rahenge, bas renderAnimeCards mein check add karo
 function renderAnimeCards(data) {
-    document.getElementById('anime-list').innerHTML = createAnimeCards(data);
+    const animeList = document.getElementById('anime-list');
+    if (!animeList) {
+        console.error('❌ #anime-list element not found!');
+        return;
+    }
+    animeList.innerHTML = createAnimeCards(data || []);
     attachReadMoreListeners();
+    console.log('🎨 Anime cards rendered');
 }
 
-function attachReadMoreListeners() {
-    document.querySelectorAll('.read-more-btn').forEach(btn => {
-        btn.style.cursor = 'pointer';
-        btn.onclick = function(e) {
-            e.stopPropagation();
-            const container = this.parentElement;
-            const shortDesc = container.querySelector('.short-desc');
-            const fullDesc = container.querySelector('.full-desc');
+// Ye check karo pehle:
+// 1. F12 dabaao -> Console tab mein dekho errors
+// 2. HTML mein ye IDs hone chahiye: anime-list, menu-btn, search-btn, search-input, side-navbar
+// 3. Google Sheet "Anyone with link can view" pe set karo
+// 4. Network tab mein fetch requests check karo
 
-            if (this.textContent === 'Read more') {
-                shortDesc.style.display = 'none';
-                fullDesc.style.display = 'block';
+console.log('🎯 Script loaded successfully!');                fullDesc.style.display = 'block';
                 this.textContent = 'Read less';
             } else {
                 shortDesc.style.display = 'block';
