@@ -1,71 +1,52 @@
-// Sheet1 = Anime Cards, Sheet2 = Slides (separate URLs)
+// Sheet1 = Anime Cards, Sheet2 = Slides
 const sheetId = '1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0';
 let allAnimeData = [];
 let slidesData = [];
 let currentSlide = 0;
 
-// Initialize everything after DOM loads
+// Initialize
 document.addEventListener('DOMContentLoaded', function() {
   fetchAllData();
   setupEventListeners();
 });
 
 function setupEventListeners() {
-  // Menu toggle (mobile navbar)
   document.getElementById('menu-btn')?.addEventListener('click', toggleNavbar);
-  
-  // Search toggle - FIXED!
-  const searchBtn = document.getElementById('search-btn');
-  if (searchBtn) {
-    searchBtn.addEventListener('click', toggleSearch);
-  }
-  
-  // Live search input
-  const searchInput = document.getElementById('search-input');
-  if (searchInput) {
-    searchInput.addEventListener('input', handleSearch);
-  }
-  
-  // Close navbar outside click
+  document.getElementById('search-btn')?.addEventListener('click', toggleSearch);
+  document.getElementById('search-input')?.addEventListener('input', handleSearch);
   document.addEventListener('click', closeNavbarOutside);
-  
-  // Escape key
   document.addEventListener('keydown', handleEscape);
 }
 
 function fetchAllData() {
-  // Fetch Anime Cards (Sheet1)
   fetchAnimeData();
-  // Fetch Slides (Sheet2)
   fetchSlidesData();
 }
 
 function fetchAnimeData() {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet1&tq=select%20*`;
-  fetch(url)
-    .then(res => res.text())
-    .then(rep => {
-      const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
-      allAnimeData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
-      renderAnimeCards(allAnimeData);
-    })
-    .catch(err => console.error('Anime data error:', err));
+  fetch(url).then(res => res.text()).then(rep => {
+    const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
+    allAnimeData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
+    renderAnimeCards(allAnimeData);
+  }).catch(err => console.error('Anime error:', err));
 }
 
 function fetchSlidesData() {
   const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet2&tq=select%20*`;
-  fetch(url)
-    .then(res => res.text())
-    .then(rep => {
-      const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
-      slidesData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
-      renderSlides();
-    })
-    .catch(err => console.error('Slides data error:', err));
+  fetch(url).then(res => res.text()).then(rep => {
+    const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
+    slidesData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
+    renderSlides();
+  }).catch(err => console.error('Slides error:', err));
 }
 
-// ANIME CARDS
+// ANIME CARDS - UPDATED WITH READ MORE
 function createAnimeCards(data) {
+  if (data.length === 0) {
+    return '<div class="no-results"><p>🔍 No anime found! Try different keywords.</p></div>';
+  }
+  
   let html = '';
   data.forEach(row => {
     const no = row[0] || '';
@@ -80,7 +61,10 @@ function createAnimeCards(data) {
           <img src="${thumbnail}" alt="${name}" />
         </div>
         <h3>${name}</h3>
-        <p class="description">${description}</p>
+        <p class="description" data-full="${description}">
+          ${description.length > 100 ? description.substring(0, 100) + '...' : description}
+          ${description.length > 100 ? '<span class="read-more">Read more</span>' : ''}
+        </p>
         <div class="actions">
           <a href="${link}" class="watch-btn" target="_blank">Watch Now</a>
           <span class="meta-small">${no}</span>
@@ -92,16 +76,32 @@ function createAnimeCards(data) {
 
 function renderAnimeCards(data) {
   document.getElementById('anime-list').innerHTML = createAnimeCards(data);
+  attachReadMoreListeners(); // Add read more functionality
 }
 
-// SLIDES (Sheet2)
+// READ MORE FUNCTIONALITY
+function attachReadMoreListeners() {
+  document.querySelectorAll('.read-more').forEach(readMore => {
+    readMore.addEventListener('click', function() {
+      const description = this.parentElement;
+      if (description.classList.contains('expanded')) {
+        description.classList.remove('expanded');
+        this.textContent = 'Read more';
+      } else {
+        description.classList.add('expanded');
+        this.textContent = 'Read less';
+      }
+    });
+  });
+}
+
+// SLIDES (unchanged)
 function createSlides(data) {
   let html = '';
-  data.forEach((row) => {
+  data.forEach(row => {
     const thumbnail = row[1] || '';
     const name = row[2] || '';
     const description = row[3] || '';
-    
     html += `
       <div class="slide" style="background-image: url('${thumbnail}')">
         <div class="meta">
@@ -118,26 +118,7 @@ function renderSlides() {
   setupCarousel();
 }
 
-function setupCarousel() {
-  document.getElementById('carousel-dots').innerHTML = '';
-  
-  // Dots
-  slidesData.forEach((_, index) => {
-    const dot = document.createElement('button');
-    dot.className = 'dot';
-    if (index === 0) dot.classList.add('active');
-    dot.addEventListener('click', () => goToSlide(index));
-    document.getElementById('carousel-dots').appendChild(dot);
-  });
-  
-  // Controls
-  document.getElementById('carousel-prev').addEventListener('click', prevSlide);
-  document.getElementById('carousel-next').addEventListener('click', nextSlide);
-  
-  updateCarousel();
-}
-
-// SEARCH FUNCTIONALITY - FIXED!
+// SEARCH - FIXED EMPTY STATE
 function toggleSearch() {
   const searchInput = document.getElementById('search-input');
   searchInput.style.display = searchInput.style.display === 'none' || searchInput.style.display === '' ? 'block' : 'none';
@@ -150,26 +131,29 @@ function toggleSearch() {
 }
 
 function handleSearch() {
-  const searchTerm = this.value.toLowerCase();
+  const searchTerm = this.value.toLowerCase().trim();
+  
+  if (searchTerm === '') {
+    renderAnimeCards(allAnimeData); // Show all when empty
+    return;
+  }
+  
   const filtered = allAnimeData.filter(row => 
     row[2]?.toLowerCase().includes(searchTerm)
   );
-  renderAnimeCards(filtered.length ? filtered : allAnimeData);
+  
+  renderAnimeCards(filtered); // Show empty state if no match
 }
 
-// NAVBAR
+// NAVBAR & CAROUSEL (same as before)
 function toggleNavbar() {
-  const navbar = document.getElementById('side-navbar');
-  navbar.classList.toggle('active');
+  document.getElementById('side-navbar').classList.toggle('active');
 }
 
 function closeNavbarOutside(e) {
   const navbar = document.getElementById('side-navbar');
   const menuBtn = document.getElementById('menu-btn');
-  
-  if (navbar.classList.contains('active') && 
-      !navbar.contains(e.target) && 
-      !menuBtn.contains(e.target)) {
+  if (navbar.classList.contains('active') && !navbar.contains(e.target) && !menuBtn.contains(e.target)) {
     navbar.classList.remove('active');
   }
 }
@@ -183,26 +167,27 @@ function handleEscape(e) {
   }
 }
 
-// CAROUSEL
+function setupCarousel() {
+  document.getElementById('carousel-dots').innerHTML = '';
+  slidesData.forEach((_, index) => {
+    const dot = document.createElement('button');
+    dot.className = 'dot';
+    if (index === 0) dot.classList.add('active');
+    dot.addEventListener('click', () => goToSlide(index));
+    document.getElementById('carousel-dots').appendChild(dot);
+  });
+  document.getElementById('carousel-prev').addEventListener('click', prevSlide);
+  document.getElementById('carousel-next').addEventListener('click', nextSlide);
+  updateCarousel();
+}
+
 function updateCarousel() {
   const track = document.getElementById('carousel-track');
   const dots = document.querySelectorAll('.dot');
-  
   track.style.transform = `translateX(-${currentSlide * 100}%)`;
   dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
 }
 
-function nextSlide() { 
-  currentSlide = (currentSlide + 1) % slidesData.length; 
-  updateCarousel(); 
-}
-
-function prevSlide() { 
-  currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1; 
-  updateCarousel(); 
-}
-
-function goToSlide(index) { 
-  currentSlide = index; 
-  updateCarousel(); 
-}
+function nextSlide() { currentSlide = (currentSlide + 1) % slidesData.length; updateCarousel(); }
+function prevSlide() { currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1; updateCarousel(); }
+function goToSlide(index) { currentSlide = index; updateCarousel(); }
