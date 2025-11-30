@@ -1,151 +1,141 @@
-/* ============================================
-   GOOGLE SHEET → JSON CONFIG
-============================================ */
-const SHEET_ID = "1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0";
-const SHEET_NAME = "Sheet1";
-const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
+/* ===============================
+    CONFIG — USE PUBLISH-TO-CSV LINKS
+================================= */
 
-let GLOBAL_DATA = []; // search ke liye store
+// IMPORTANT: Sheet → File → Share → Publish → CSV
+
+// Anime List CSV
+const ANIME_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/gviz/tq?tqx=out:csv";
+
+// Slide CSV
+const SLIDE_SHEET_URL =
+  "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/gviz/tq?tqx=out:csv";
 
 
 
+/* ===============================
+    CSV → JSON Converter
+================================= */
+function csvToJson(csv) {
+  const lines = csv.trim().split("\n");
+  const headers = lines[0].split(",");
+
+  return lines.slice(1).map((row) => {
+    const values = row.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/); // FIX for commas inside text
+    let obj = {};
+
+    headers.forEach((h, i) => {
+      obj[h.trim()] = values[i] ? values[i].replace(/"/g, "").trim() : "";
+    });
+
+    return obj;
+  });
+}
 
 
-/* ============================================
-   LOAD DATA FROM GOOGLE SHEET
-============================================ */
-async function loadData() {
+
+/* ===============================
+    LOAD SLIDES
+================================= */
+async function loadSlides() {
   try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
+    const res = await fetch(SLIDE_SHEET_URL);
+    const csv = await res.text();
+    const slides = csvToJson(csv);
 
-    GLOBAL_DATA = data;
+    const track = document.getElementById("carousel-track");
+    const dotsContainer = document.getElementById("carousel-dots");
 
-    fillSlides(data);
-    fillAnimeCards(data);
-    initSearch();
+    track.innerHTML = "";
+    dotsContainer.innerHTML = "";
 
+    slides.forEach((s, i) => {
+      const slide = document.createElement("div");
+      slide.className = "slide";
+      slide.style.backgroundImage = `url('${s.thumbnail || s.Thumbnail || ""}')`;
+
+      slide.innerHTML = `
+        <div class="meta">
+          <h3>${s.name || s.Name || "Untitled"}</h3>
+          <p>${s.description || s.Description || ""}</p>
+        </div>
+      `;
+
+      track.appendChild(slide);
+
+      const dot = document.createElement("div");
+      dot.className = "dot";
+      if (i === 0) dot.classList.add("active");
+      dot.dataset.index = i;
+
+      dot.addEventListener("click", () => goToSlide(i, slides.length));
+      dotsContainer.appendChild(dot);
+    });
+
+    initCarousel(slides.length);
   } catch (err) {
-    console.error("Sheet Load Error:", err);
+    console.error("Slide Load Error:", err);
   }
 }
 
 
 
+/* ===============================
+    LOAD ANIME CARDS
+================================= */
+async function loadAnimeCards() {
+  try {
+    const res = await fetch(ANIME_SHEET_URL);
+    const csv = await res.text();
+    const animeList = csvToJson(csv);
 
+    const container = document.getElementById("anime-list");
+    container.innerHTML = "";
 
-/* ============================================
-   SLIDES (CAROUSEL)
-============================================ */
-function fillSlides(data) {
-  const slides = data.filter(d => d.Thumbnail && d.Thumbnail !== "");
+    animeList.forEach((a) => {
+      const card = document.createElement("article");
+      card.className = "anime-card";
 
-  const track = document.getElementById("carousel-track");
-  const dotsContainer = document.getElementById("carousel-dots");
+      card.innerHTML = `
+        <div class="thumb">
+          <img src="${a.thumbnail || a.Thumbnail}" alt="${a.name || a.Name}">
+        </div>
 
-  track.innerHTML = "";
-  dotsContainer.innerHTML = "";
+        <h3>${a.name || a.Name}</h3>
 
-  slides.forEach((s, i) => {
-    const slide = document.createElement("div");
-    slide.className = "slide";
-    slide.style.backgroundImage = `url('${s.Thumbnail}')`;
+        <p class="description">
+          ${a.description || a.Description}
+          <span class="read-more">Read More</span>
+        </p>
 
-    slide.innerHTML = `
-      <div class="meta">
-        <h3>${s.Name}</h3>
-        <p>${s.Description || ""}</p>
-      </div>
-    `;
+        <div class="actions">
+          <a class="watch-btn" href="${a.link || a.Link}" target="_blank">Watch Now</a>
+        </div>
+      `;
 
-    track.appendChild(slide);
+      const desc = card.querySelector(".description");
+      const btn = card.querySelector(".read-more");
 
-    const dot = document.createElement("div");
-    dot.className = "dot";
-    dot.dataset.index = i;
-    if (i === 0) dot.classList.add("active");
-    dot.onclick = () => goToSlide(i, slides.length);
+      btn.addEventListener("click", () => {
+        desc.classList.toggle("expanded");
+        btn.textContent = desc.classList.contains("expanded")
+          ? "Read Less"
+          : "Read More";
+      });
 
-    dotsContainer.appendChild(dot);
-  });
-
-  initCarousel(slides.length);
+      container.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Anime Load Error:", err);
+  }
 }
 
 
 
-
-
-/* ============================================
-   ANIME CARDS
-============================================ */
-function fillAnimeCards(data) {
-  const container = document.getElementById("anime-list");
-  container.innerHTML = "";
-
-  data.forEach(a => {
-    const card = document.createElement("article");
-    card.className = "anime-card";
-
-    card.innerHTML = `
-      <div class="thumb">
-        <img src="${a.Thumbnail}" alt="${a.Name}">
-      </div>
-
-      <h3>${a.Name}</h3>
-
-      <p class="description">
-        ${a.Description}
-        <span class="read-more">Read More</span>
-      </p>
-
-      <div class="actions">
-        <a class="watch-btn" href="${a.Link}" target="_blank">Watch Now</a>
-      </div>
-    `;
-
-    const desc = card.querySelector(".description");
-    const btn = card.querySelector(".read-more");
-
-    btn.onclick = () => {
-      desc.classList.toggle("expanded");
-      btn.textContent = desc.classList.contains("expanded")
-        ? "Read Less"
-        : "Read More";
-    };
-
-    container.appendChild(card);
-  });
-}
-
-
-
-
-
-/* ============================================
-   SEARCH — only by NAME
-============================================ */
-function initSearch() {
-  const input = document.getElementById("search");
-
-  input.oninput = function () {
-    const q = this.value.toLowerCase();
-
-    const filtered = GLOBAL_DATA.filter(item =>
-      item.Name.toLowerCase().includes(q)
-    );
-
-    fillAnimeCards(filtered);
-  };
-}
-
-
-
-
-
-/* ============================================
-   CAROUSEL CONTROLS
-============================================ */
+/* ===============================
+    CAROUSEL
+================================= */
 let currentSlide = 0;
 
 function initCarousel(total) {
@@ -168,19 +158,21 @@ function goToSlide(index, total) {
 function updateCarousel(total) {
   const track = document.getElementById("carousel-track");
   const dots = document.querySelectorAll(".dot");
+
   const slideWidth = track.children[0].clientWidth + 14;
 
   track.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
 
-  dots.forEach(d => d.classList.remove("active"));
+  dots.forEach((d) => d.classList.remove("active"));
   dots[currentSlide].classList.add("active");
 }
 
 
 
-
-
-/* ============================================
-   INIT ON PAGE LOAD
-============================================ */
-window.onload = loadData;
+/* ===============================
+    INIT
+================================= */
+window.onload = function () {
+  loadSlides();
+  loadAnimeCards();
+};
