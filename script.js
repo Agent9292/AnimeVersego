@@ -2,7 +2,6 @@ const sheetId = '1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0';
 let allAnimeData = [];
 let slidesData = [];
 let currentSlide = 0;
-let isSearching = false; // ⭐ NEW: Search state track
 
 document.addEventListener('DOMContentLoaded', function() {
     fetchAllData();
@@ -116,65 +115,25 @@ function attachReadMoreListeners() {
     });
 }
 
-// ⭐ UPDATED SEARCH FUNCTIONS
 function toggleSearch() {
     const searchInput = document.getElementById('search-input');
     if (!searchInput) return;
-    
-    const wasVisible = searchInput.style.display === 'block';
-    searchInput.style.display = wasVisible ? 'none' : 'block';
+    searchInput.style.display = (searchInput.style.display === 'block') ? 'none' : 'block';
 
     if (searchInput.style.display === 'block') {
         searchInput.focus();
         searchInput.select();
-        isSearching = true;
-        hideSlidesShowAnime(); // ⭐ Hide slides, show anime top
-    } else {
-        isSearching = false;
-        searchInput.value = '';
-        renderAnimeCards(allAnimeData);
-        showSlides(); // ⭐ Show slides back
         document.getElementById('anime-section')?.scrollIntoView({ behavior: 'smooth' });
     }
 }
 
 function handleSearch() {
-    isSearching = true;
-    hideSlidesShowAnime(); // ⭐ Hide slides during search
-    
     const searchTerm = this.value.toLowerCase().trim();
     if (searchTerm === '') {
         renderAnimeCards(allAnimeData);
     } else {
         const filtered = allAnimeData.filter(row => row[2]?.toLowerCase().includes(searchTerm));
         renderAnimeCards(filtered);
-    }
-}
-
-// ⭐ NEW FUNCTIONS FOR SLIDE CONTROL
-function hideSlidesShowAnime() {
-    const carouselSection = document.querySelector('.carousel-section, #carousel-container, #carousel-track, .slides-section, .carousel');
-    const animeSection = document.getElementById('anime-section');
-    
-    if (carouselSection) {
-        carouselSection.style.display = 'none';
-        carouselSection.style.height = '0';
-        carouselSection.style.overflow = 'hidden';
-    }
-    
-    if (animeSection) {
-        animeSection.style.marginTop = '0';
-        animeSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-}
-
-function showSlides() {
-    const carouselSection = document.querySelector('.carousel-section, #carousel-container, #carousel-track, .slides-section, .carousel');
-    
-    if (carouselSection) {
-        carouselSection.style.display = 'block';
-        carouselSection.style.height = 'auto';
-        carouselSection.style.overflow = 'visible';
     }
 }
 
@@ -195,12 +154,10 @@ function closeNavbarOutside(e) {
 function handleEscape(e) {
     if (e.key === 'Escape') {
         const searchInput = document.getElementById('search-input');
-        if (searchInput && searchInput.style.display === 'block') {
+        if (searchInput) {
             searchInput.style.display = 'none';
             searchInput.value = '';
-            isSearching = false;
             renderAnimeCards(allAnimeData);
-            showSlides(); // ⭐ Show slides back
         }
 
         const navbar = document.getElementById('side-navbar');
@@ -253,6 +210,8 @@ function setupCarousel() {
     document.getElementById('carousel-next')?.addEventListener('click', nextSlide);
 
     updateCarousel();
+
+    // ⭐ ENABLE AUTO SLIDE
     startAutoSlide();
 }
 
@@ -269,27 +228,23 @@ function updateCarousel() {
 }
 
 function nextSlide() {
-    if (isSearching) return; // ⭐ Don't auto-slide during search
     currentSlide = (currentSlide + 1) % slidesData.length;
     updateCarousel();
 }
 
 function prevSlide() {
-    if (isSearching) return; // ⭐ Don't manual slide during search
     currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1;
     updateCarousel();
 }
 
 function goToSlide(index) {
-    if (isSearching) return; // ⭐ Don't dot navigation during search
     currentSlide = index;
     updateCarousel();
 }
 
+// ⭐ AUTO SLIDE FUNCTION
 function startAutoSlide() {
     setInterval(() => {
-        if (!isSearching) { // ⭐ Only auto-slide when not searching
-            nextSlide();
-        }
-    }, 4000);
+        nextSlide();
+    }, 4000); // Auto slide every 4 seconds
 }
