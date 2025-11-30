@@ -1,13 +1,12 @@
-
 /* ===============================
     CONFIG — ADD YOUR GOOGLE SHEET LINKS HERE
 ================================= */
 
 // Anime List Sheet → publish to CSV and paste link
-const ANIME_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
+const ANIME_SHEET_URL = "PASTE_ANIME_SHEET_CSV_LINK_HERE";
 
 // Slides Sheet → publish to CSV and paste link
-const SLIDE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
+const SLIDE_SHEET_URL = "PASTE_SLIDE_SHEET_CSV_LINK_HERE";
 
 
 
@@ -47,14 +46,14 @@ async function loadSlides() {
       // Slide Element
       const slide = document.createElement("div");
       slide.className = "slide";
-      slide.style.backgroundImage = `url('${s.image}')`;
+      slide.style.backgroundImage = url('${s.image}');
 
-      slide.innerHTML = `
+      slide.innerHTML = 
         <div class="meta">
           <h3>${s.title || "Untitled"}</h3>
           <p>${s.subtitle || ""}</p>
         </div>
-      `;
+      ;
 
       track.appendChild(slide);
 
@@ -93,7 +92,7 @@ async function loadAnimeCards() {
       const card = document.createElement("article");
       card.className = "anime-card";
 
-      card.innerHTML = `
+      card.innerHTML = 
         <div class="thumb">
           <img src="${a.thumbnail}" alt="${a.name}">
         </div>
@@ -107,7 +106,7 @@ async function loadAnimeCards() {
         <div class="actions">
           <a class="watch-btn" href="${a.link}" target="_blank">Watch Now</a>
         </div>
-      `;
+      ;
 
       // Read more Function
       const desc = card.querySelector(".description");
@@ -156,9 +155,7 @@ function updateCarousel(total) {
 
   const slideWidth = track.children[0].clientWidth + 14; // gap included
 
-  track.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
-
-  dots.forEach(d => d.classList.remove("active"));
+  track.style.transform = translateX(-${currentSlide * slideWidth}px);dots.forEach(d => d.classList.remove("active"));
   dots[currentSlide].classList.add("active");
 }
 
@@ -171,35 +168,3 @@ window.onload = function () {
   loadSlides();
   loadAnimeCards();
 };
-
-
-agr nah ho yaa tumko problem lagta hai toh yeh method use karo ohk mujeh kuch mt bolna 
-
-// ================================
-// GOOGLE SHEET CONFIG
-// ================================
-const SHEET_ID = "1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0";
-const SHEET_NAME = "Sheet1";
-const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
-
-
-// ================================
-// FETCH SHEET DATA
-// ================================
-async function loadData() {
-  try {
-    const res = await fetch(API_URL);
-    const data = await res.json();
-
-
-    console.log("Sheet Data:", data);
-
-
-    fillCarousel(data);
-    fillAnimeList(data);
-
-
-  } catch (error) {
-    console.error("Error loading sheet:", error);
-  }
-}
