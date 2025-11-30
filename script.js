@@ -1,170 +1,125 @@
-/* ===============================
-    CONFIG — ADD YOUR GOOGLE SHEET LINKS HERE
-================================= */
+// Teri sheet ka ID (URL se copy kiya)
+const SHEET_ID = "1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0";
+const SHEET_NAME = "Sheet1"; // Apne sheet ka naam check kar lena
 
-// Anime List Sheet → publish to CSV and paste link
-const ANIME_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
+// Magic URL jo direct JSON deta hai (public sheet ke liye)
+const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
 
-// Slides Sheet → publish to CSV and paste link
-const SLIDE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
+async function loadAnimeData() {
+  try {
+    const response = await fetch(SHEET_URL);
+    const text = await response.text();
+    
+    // JSON extract karo (Google ka special format hota hai)
+    const jsonStart = text.indexOf('(') + 1;
+    const jsonEnd = text.lastIndexOf(')');
+    const data = JSON.parse(text.slice(jsonStart, jsonEnd));
+    
+    if (data.table.rows) {
+      renderAnimeCards(data.table.rows);
+      renderFeaturedSlides(data.table.rows.slice(0, 5));
+      console.log("Data loaded successfully!");
+    }
+  } catch (error) {
+    console.error("Error:", error);
+    document.getElementById("anime-list").innerHTML = "<p>Data load nahi hua. Sheet public hai check karo!</p>";
+  }
+}
 
-
-
-/* ===============================
-    CSV → JSON Converter
-================================= */
-function csvToJson(csv) {
-  const lines = csv.trim().split("\n");
-  const headers = lines[0].split(",");
-
-  return lines.slice(1).map(row => {
-    const values = row.split(",");
-    let obj = {};
-    headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim());
-    return obj;
+function renderAnimeCards(rows) {
+  const container = document.getElementById("anime-list");
+  container.innerHTML = "";
+  
+  rows.forEach((row, index) => {
+    const cols = row.c;
+    const no = cols[0]?.v || index + 1;
+    const thumbnail = cols[1]?.v || "https://via.placeholder.com/200x300?text=No+Image";
+    const name = cols[2]?.v || "Unknown Anime";
+    const description = cols[3]?.v || "No description available";
+    const link = cols[4]?.v || "#";
+    
+    const card = document.createElement("div");
+    card.className = "anime-card";
+    card.innerHTML = `
+      <img src="${thumbnail}" alt="${name}" loading="lazy">
+      <div class="card-content">
+        <h4>#${no}</h4>
+        <h3>${name}</h3>
+        <p>${description}</p>
+        <a href="${link}" target="_blank" class="watch-btn">▶ Watch Now</a>
+      </div>
+    `;
+    container.appendChild(card);
   });
 }
 
-
-
-/* ===============================
-    LOAD SLIDES
-================================= */
-async function loadSlides() {
-  try {
-    const res = await fetch(SLIDE_SHEET_URL);
-    const csv = await res.text();
-    const slides = csvToJson(csv);
-
-    const track = document.getElementById("carousel-track");
-    const dotsContainer = document.getElementById("carousel-dots");
-
-    track.innerHTML = "";
-    dotsContainer.innerHTML = "";
-
-    slides.forEach((s, i) => {
-      // Slide Element
-      const slide = document.createElement("div");
-      slide.className = "slide";
-      slide.style.backgroundImage = url('${s.image}');
-
-      slide.innerHTML = 
-        <div class="meta">
-          <h3>${s.title || "Untitled"}</h3>
-          <p>${s.subtitle || ""}</p>
-        </div>
-      ;
-
-      track.appendChild(slide);
-
-      // Dot
-      const dot = document.createElement("div");
-      dot.className = "dot";
-      if (i === 0) dot.classList.add("active");
-      dot.dataset.index = i;
-
-      dot.addEventListener("click", () => goToSlide(i, slides.length));
-      dotsContainer.appendChild(dot);
-    });
-
-    initCarousel(slides.length);
-
-  } catch (err) {
-    console.error("Slide Load Error:", err);
-  }
-}
-
-
-
-/* ===============================
-    LOAD ANIME CARDS
-================================= */
-async function loadAnimeCards() {
-  try {
-    const res = await fetch(ANIME_SHEET_URL);
-    const csv = await res.text();
-    const animeList = csvToJson(csv);
-
-    const container = document.getElementById("anime-list");
-    container.innerHTML = "";
-
-    animeList.forEach(a => {
-      const card = document.createElement("article");
-      card.className = "anime-card";
-
-      card.innerHTML = 
-        <div class="thumb">
-          <img src="${a.thumbnail}" alt="${a.name}">
-        </div>
-        <h3>${a.name}</h3>
-
-        <p class="description">
-          ${a.description}
-          <span class="read-more">Read More</span>
-        </p>
-
-        <div class="actions">
-          <a class="watch-btn" href="${a.link}" target="_blank">Watch Now</a>
-        </div>
-      ;
-
-      // Read more Function
-      const desc = card.querySelector(".description");
-      const btn = card.querySelector(".read-more");
-
-      btn.addEventListener("click", () => {
-        desc.classList.toggle("expanded");
-        btn.textContent = desc.classList.contains("expanded") ? "Read Less" : "Read More";
-      });
-
-      container.appendChild(card);
-    });
-
-  } catch (err) {
-    console.error("Anime Load Error:", err);
-  }
-}
-
-
-
-/* ===============================
-    CAROUSEL CONTROLS
-================================= */
-let currentSlide = 0;
-
-function initCarousel(total) {
-  document.getElementById("carousel-prev").onclick = () => {
-    currentSlide = (currentSlide - 1 + total) % total;
-    updateCarousel(total);
-  };
-
-  document.getElementById("carousel-next").onclick = () => {
-    currentSlide = (currentSlide + 1) % total;
-    updateCarousel(total);
-  };
-}
-
-function goToSlide(index, total) {
-  currentSlide = index;
-  updateCarousel(total);
-}
-
-function updateCarousel(total) {
+function renderFeaturedSlides(rows) {
   const track = document.getElementById("carousel-track");
-  const dots = document.querySelectorAll(".dot");
-
-  const slideWidth = track.children[0].clientWidth + 14; // gap included
-
-  track.style.transform = translateX(-${currentSlide * slideWidth}px);dots.forEach(d => d.classList.remove("active"));
-  dots[currentSlide].classList.add("active");
+  const dots = document.getElementById("carousel-dots");
+  track.innerHTML = "";
+  dots.innerHTML = "";
+  
+  rows.forEach((row, index) => {
+    const cols = row.c;
+    const thumbnail = cols[1]?.v || "";
+    const name = cols[2]?.v || "";
+    
+    // Slide banaye
+    const slide = document.createElement("div");
+    slide.className = "carousel-slide";
+    slide.innerHTML = `
+      <img src="${thumbnail}" alt="${name}">
+      <div class="slide-info">
+        <h3>${name}</h3>
+      </div>
+    `;
+    track.appendChild(slide);
+    
+    // Dots banaye
+    const dot = document.createElement("span");
+    dot.className = "carousel-dot";
+    dot.dataset.index = index;
+    dots.appendChild(dot);
+  });
+  
+  // Basic carousel functionality
+  initCarousel();
 }
 
+// Simple carousel
+function initCarousel() {
+  const slides = document.querySelectorAll(".carousel-slide");
+  const dots = document.querySelectorAll(".carousel-dot");
+  let currentSlide = 0;
+  
+  if (slides.length === 0) return;
+  
+  function showSlide(index) {
+    document.getElementById("carousel-track").style.transform = 
+      `translateX(-${index * 100}%)`;
+    
+    dots.forEach(dot => dot.classList.remove("active"));
+    dots[index].classList.add("active");
+  }
+  
+  document.getElementById("carousel-next").onclick = () => {
+    currentSlide = (currentSlide + 1) % slides.length;
+    showSlide(currentSlide);
+  };
+  
+  document.getElementById("carousel-prev").onclick = () => {
+    currentSlide = (currentSlide - 1 + slides.length) % slides.length;
+    showSlide(currentSlide);
+  };
+  
+  // Dots click
+  dots.forEach((dot, index) => {
+    dot.onclick = () => {
+      currentSlide = index;
+      showSlide(index);
+    };
+  });
+}
 
-
-/* ===============================
-    INIT ON PAGE LOAD
-================================= */
-window.onload = function () {
-  loadSlides();
-  loadAnimeCards();
-};
+// Page load par data fetch karo
+document.addEventListener("DOMContentLoaded", loadAnimeData);
