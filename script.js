@@ -1,80 +1,186 @@
-// ================================
-// GOOGLE SHEET CONFIG - Working!
-// ================================
+/* ============================================
+   GOOGLE SHEET → JSON CONFIG
+============================================ */
 const SHEET_ID = "1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0";
 const SHEET_NAME = "Sheet1";
 const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
 
-// Global data storage
-let allAnimeData = [];
+let GLOBAL_DATA = []; // search ke liye store
 
-// ================================
-// FIXED LOAD DATA FUNCTION
-// ================================
+
+
+
+
+/* ============================================
+   LOAD DATA FROM GOOGLE SHEET
+============================================ */
 async function loadData() {
-    try {
-        console.log("🔄 Fetching from:", API_URL);
-        
-        const res = await fetch(API_URL);
-        
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
-        }
-        
-        const data = await res.json();
-        console.log("✅ Sheet Data Loaded:", data.length, "rows");
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
 
-        // Filter valid anime data (name & thumbnail required)
-        allAnimeData = data.filter(row => 
-            row.name && row.name.trim() && 
-            row.thumbnail && row.thumbnail.trim()
-        ).map(row => ({
-            name: row.name || '',
-            thumbnail: row.thumbnail || '',
-            description: row.description || '',
-            link: row.link || ''
-        }));
+    GLOBAL_DATA = data;
 
-        console.log("🎌 Valid Anime:", allAnimeData.length);
+    fillSlides(data);
+    fillAnimeCards(data);
+    initSearch();
 
-        if (allAnimeData.length === 0) {
-            console.warn("⚠️ No valid anime data found!");
-        }
-
-        // Call your functions
-        fillCarousel(allAnimeData);
-        fillAnimeList(allAnimeData);
-        
-    } catch (error) {
-        console.error("❌ Error loading sheet:", error);
-        document.getElementById('anime-list')?.innerHTML = 
-            '<div style="text-align:center;color:#ff6b6b;">Failed to load anime data!</div>';
-    }
+  } catch (err) {
+    console.error("Sheet Load Error:", err);
+  }
 }
 
-// ================================
-// SEARCH FUNCTION (Bonus)
-// ================================
-function searchAnime(query = '') {
-    const filtered = allAnimeData.filter(anime => 
-        anime.name.toLowerCase().includes(query.toLowerCase().trim())
+
+
+
+
+/* ============================================
+   SLIDES (CAROUSEL)
+============================================ */
+function fillSlides(data) {
+  const slides = data.filter(d => d.Thumbnail && d.Thumbnail !== "");
+
+  const track = document.getElementById("carousel-track");
+  const dotsContainer = document.getElementById("carousel-dots");
+
+  track.innerHTML = "";
+  dotsContainer.innerHTML = "";
+
+  slides.forEach((s, i) => {
+    const slide = document.createElement("div");
+    slide.className = "slide";
+    slide.style.backgroundImage = `url('${s.Thumbnail}')`;
+
+    slide.innerHTML = `
+      <div class="meta">
+        <h3>${s.Name}</h3>
+        <p>${s.Description || ""}</p>
+      </div>
+    `;
+
+    track.appendChild(slide);
+
+    const dot = document.createElement("div");
+    dot.className = "dot";
+    dot.dataset.index = i;
+    if (i === 0) dot.classList.add("active");
+    dot.onclick = () => goToSlide(i, slides.length);
+
+    dotsContainer.appendChild(dot);
+  });
+
+  initCarousel(slides.length);
+}
+
+
+
+
+
+/* ============================================
+   ANIME CARDS
+============================================ */
+function fillAnimeCards(data) {
+  const container = document.getElementById("anime-list");
+  container.innerHTML = "";
+
+  data.forEach(a => {
+    const card = document.createElement("article");
+    card.className = "anime-card";
+
+    card.innerHTML = `
+      <div class="thumb">
+        <img src="${a.Thumbnail}" alt="${a.Name}">
+      </div>
+
+      <h3>${a.Name}</h3>
+
+      <p class="description">
+        ${a.Description}
+        <span class="read-more">Read More</span>
+      </p>
+
+      <div class="actions">
+        <a class="watch-btn" href="${a.Link}" target="_blank">Watch Now</a>
+      </div>
+    `;
+
+    const desc = card.querySelector(".description");
+    const btn = card.querySelector(".read-more");
+
+    btn.onclick = () => {
+      desc.classList.toggle("expanded");
+      btn.textContent = desc.classList.contains("expanded")
+        ? "Read Less"
+        : "Read More";
+    };
+
+    container.appendChild(card);
+  });
+}
+
+
+
+
+
+/* ============================================
+   SEARCH — only by NAME
+============================================ */
+function initSearch() {
+  const input = document.getElementById("search");
+
+  input.oninput = function () {
+    const q = this.value.toLowerCase();
+
+    const filtered = GLOBAL_DATA.filter(item =>
+      item.Name.toLowerCase().includes(q)
     );
-    
-    fillCarousel(filtered);
-    fillAnimeList(filtered);
-    
-    console.log(`🔍 Found ${filtered.length} anime for "${query}"`);
+
+    fillAnimeCards(filtered);
+  };
 }
 
-// ================================
-// INIT - Auto load on page ready
-// ================================
-document.addEventListener('DOMContentLoaded', () => {
-    console.log('🚀 AnimeVerse JS Ready!');
-    loadData();
-});
 
-// Export functions for global use
-window.loadData = loadData;
-window.searchAnime = searchAnime;
-window.allAnimeData = () => allAnimeData;
+
+
+
+/* ============================================
+   CAROUSEL CONTROLS
+============================================ */
+let currentSlide = 0;
+
+function initCarousel(total) {
+  document.getElementById("carousel-prev").onclick = () => {
+    currentSlide = (currentSlide - 1 + total) % total;
+    updateCarousel(total);
+  };
+
+  document.getElementById("carousel-next").onclick = () => {
+    currentSlide = (currentSlide + 1) % total;
+    updateCarousel(total);
+  };
+}
+
+function goToSlide(index, total) {
+  currentSlide = index;
+  updateCarousel(total);
+}
+
+function updateCarousel(total) {
+  const track = document.getElementById("carousel-track");
+  const dots = document.querySelectorAll(".dot");
+  const slideWidth = track.children[0].clientWidth + 14;
+
+  track.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
+
+  dots.forEach(d => d.classList.remove("active"));
+  dots[currentSlide].classList.add("active");
+}
+
+
+
+
+
+/* ============================================
+   INIT ON PAGE LOAD
+============================================ */
+window.onload = loadData;
