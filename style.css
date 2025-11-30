@@ -419,24 +419,6 @@ section h2{
   transform: scale(1.02);
 }
 
-/* Mobile Navbar Animation - tumhare existing CSS ke saath */
-@media (max-width: 1000px) {
-  #side-navbar {
-    transform: translateX(-100%);
-    opacity: 0;
-    visibility: hidden;
-    transition: all var(--transition);
-  }
-  
-  #side-navbar.active {
-    transform: translateX(0);
-    opacity: 1;
-    visibility: visible;
-  }
-}
-
-
-
 
 .no-results {
   grid-column: 1 / -1;
@@ -561,4 +543,46 @@ section h2{
 .anime-card {
   position: relative;
   overflow: visible;
+}
+
+
+/* -------------------------
+   Mobile Responsive (PERFECT VERSION)
+   ------------------------- */
+@media (max-width: 1000px){
+  #main-content{ 
+    padding-left:20px; 
+    transition: padding-left var(--transition);
+  }
+  
+  #side-navbar { 
+    position: fixed !important;
+    left: 0;
+    top: 70px;
+    width: 280px;
+    height: calc(100vh - 70px);
+    transform: translateX(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all var(--transition);
+    border-radius: 0 16px 16px 0;
+    z-index: 1000;
+  }
+  
+  #side-navbar.active {
+    transform: translateX(0) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  
+  #anime-list{ grid-template-columns: repeat(2,1fr) }
+  .slide{ height:240px }
+}
+
+@media (max-width: 640px){
+  #site-header{ padding:12px }
+  .header-center h1{ font-size:18px }
+  #side-navbar{ width: 260px }
+  #anime-list{ grid-template-columns: 1fr }
+  .slide{ height:200px; padding:14px }
 }
