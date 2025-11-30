@@ -435,7 +435,9 @@ section h2{
   }
 }
 
-/* No Results State */
+
+
+
 .no-results {
   grid-column: 1 / -1;
   text-align: center;
@@ -444,27 +446,29 @@ section h2{
   font-size: 16px;
 }
 
-/* Read More Styling */
 .read-more {
   color: var(--accent);
   font-weight: 700;
   cursor: pointer;
   text-decoration: underline;
-  margin-left: 4px;
+  margin-left: 6px;
 }
 
 .read-more:hover {
   color: var(--accent-2);
+  text-decoration: none;
 }
 
-.description.expanded {
+/* Description base style */
+.anime-card .description {
+  overflow: hidden;
+  max-height: 4.8em; /* about 3 lines */
+  line-height: 1.6em;
+  position: relative;
+}
+
+.anime-card .description.expanded {
   max-height: none !important;
 }
 
-/* Existing description fix */
-.anime-card .description {
-  max-height: 3.2em;
-  overflow: hidden;
-  position: relative;
-}
 
