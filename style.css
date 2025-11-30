@@ -520,3 +520,45 @@ section h2{
   margin-bottom: 0;
 }
 
+.description-container {
+  position: relative; /* Positioned for z-index to work */
+  margin-bottom: 8px;
+  z-index: 1000; /* High z-index to ensure visibility */
+}
+
+.read-more-btn {
+  position: relative; /* Positioned */
+  z-index: 1100; /* Higher than description container */
+  display: inline-block;
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: rgba(124,58,237,0.1);
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  transition: all var(--transition);
+}
+
+.read-more-btn:hover {
+  background: rgba(124,58,237,0.2);
+  color: var(--accent-2);
+  transform: translateY(-1px);
+}
+
+.full-desc {
+  margin: 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.5;
+  position: relative; /* Ensure it's above other elements */
+  z-index: 1050;
+}
+
+/* Parent card should also allow overflow visible so full description is not cut off */
+.anime-card {
+  position: relative;
+  overflow: visible;
+}
