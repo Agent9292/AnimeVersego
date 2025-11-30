@@ -1,16 +1,13 @@
+
 /* ===============================
-    CONFIG — USE PUBLISH-TO-CSV LINKS
+    CONFIG — ADD YOUR GOOGLE SHEET LINKS HERE
 ================================= */
 
-// IMPORTANT: Sheet → File → Share → Publish → CSV
+// Anime List Sheet → publish to CSV and paste link
+const ANIME_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
 
-// Anime List CSV
-const ANIME_SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/gviz/tq?tqx=out:csv";
-
-// Slide CSV
-const SLIDE_SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/gviz/tq?tqx=out:csv";
+// Slides Sheet → publish to CSV and paste link
+const SLIDE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
 
 
 
@@ -21,14 +18,10 @@ function csvToJson(csv) {
   const lines = csv.trim().split("\n");
   const headers = lines[0].split(",");
 
-  return lines.slice(1).map((row) => {
-    const values = row.split(/,(?=(?:[^"]*"[^"]*")*[^"]*$)/); // FIX for commas inside text
+  return lines.slice(1).map(row => {
+    const values = row.split(",");
     let obj = {};
-
-    headers.forEach((h, i) => {
-      obj[h.trim()] = values[i] ? values[i].replace(/"/g, "").trim() : "";
-    });
-
+    headers.forEach((h, i) => obj[h.trim()] = values[i]?.trim());
     return obj;
   });
 }
@@ -51,19 +44,21 @@ async function loadSlides() {
     dotsContainer.innerHTML = "";
 
     slides.forEach((s, i) => {
+      // Slide Element
       const slide = document.createElement("div");
       slide.className = "slide";
-      slide.style.backgroundImage = `url('${s.thumbnail || s.Thumbnail || ""}')`;
+      slide.style.backgroundImage = `url('${s.image}')`;
 
       slide.innerHTML = `
         <div class="meta">
-          <h3>${s.name || s.Name || "Untitled"}</h3>
-          <p>${s.description || s.Description || ""}</p>
+          <h3>${s.title || "Untitled"}</h3>
+          <p>${s.subtitle || ""}</p>
         </div>
       `;
 
       track.appendChild(slide);
 
+      // Dot
       const dot = document.createElement("div");
       dot.className = "dot";
       if (i === 0) dot.classList.add("active");
@@ -74,6 +69,7 @@ async function loadSlides() {
     });
 
     initCarousel(slides.length);
+
   } catch (err) {
     console.error("Slide Load Error:", err);
   }
@@ -93,39 +89,38 @@ async function loadAnimeCards() {
     const container = document.getElementById("anime-list");
     container.innerHTML = "";
 
-    animeList.forEach((a) => {
+    animeList.forEach(a => {
       const card = document.createElement("article");
       card.className = "anime-card";
 
       card.innerHTML = `
         <div class="thumb">
-          <img src="${a.thumbnail || a.Thumbnail}" alt="${a.name || a.Name}">
+          <img src="${a.thumbnail}" alt="${a.name}">
         </div>
-
-        <h3>${a.name || a.Name}</h3>
+        <h3>${a.name}</h3>
 
         <p class="description">
-          ${a.description || a.Description}
+          ${a.description}
           <span class="read-more">Read More</span>
         </p>
 
         <div class="actions">
-          <a class="watch-btn" href="${a.link || a.Link}" target="_blank">Watch Now</a>
+          <a class="watch-btn" href="${a.link}" target="_blank">Watch Now</a>
         </div>
       `;
 
+      // Read more Function
       const desc = card.querySelector(".description");
       const btn = card.querySelector(".read-more");
 
       btn.addEventListener("click", () => {
         desc.classList.toggle("expanded");
-        btn.textContent = desc.classList.contains("expanded")
-          ? "Read Less"
-          : "Read More";
+        btn.textContent = desc.classList.contains("expanded") ? "Read Less" : "Read More";
       });
 
       container.appendChild(card);
     });
+
   } catch (err) {
     console.error("Anime Load Error:", err);
   }
@@ -134,7 +129,7 @@ async function loadAnimeCards() {
 
 
 /* ===============================
-    CAROUSEL
+    CAROUSEL CONTROLS
 ================================= */
 let currentSlide = 0;
 
@@ -159,20 +154,52 @@ function updateCarousel(total) {
   const track = document.getElementById("carousel-track");
   const dots = document.querySelectorAll(".dot");
 
-  const slideWidth = track.children[0].clientWidth + 14;
+  const slideWidth = track.children[0].clientWidth + 14; // gap included
 
   track.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
 
-  dots.forEach((d) => d.classList.remove("active"));
+  dots.forEach(d => d.classList.remove("active"));
   dots[currentSlide].classList.add("active");
 }
 
 
 
 /* ===============================
-    INIT
+    INIT ON PAGE LOAD
 ================================= */
 window.onload = function () {
   loadSlides();
   loadAnimeCards();
 };
+
+
+agr nah ho yaa tumko problem lagta hai toh yeh method use karo ohk mujeh kuch mt bolna 
+
+// ================================
+// GOOGLE SHEET CONFIG
+// ================================
+const SHEET_ID = "1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0";
+const SHEET_NAME = "Sheet1";
+const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
+
+
+// ================================
+// FETCH SHEET DATA
+// ================================
+async function loadData() {
+  try {
+    const res = await fetch(API_URL);
+    const data = await res.json();
+
+
+    console.log("Sheet Data:", data);
+
+
+    fillCarousel(data);
+    fillAnimeList(data);
+
+
+  } catch (error) {
+    console.error("Error loading sheet:", error);
+  }
+}
