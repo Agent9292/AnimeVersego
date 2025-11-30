@@ -1,5 +1,5 @@
 // ================================
-// CLEAN JS - NO SYNTAX ERRORS!
+// GOOGLE SHEETS DATA LOADER ONLY
 // ================================
 const SHEET_ID = "1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0";
 const SHEET_NAME = "Sheet1";
@@ -8,19 +8,16 @@ const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
 let allAnimeData = [];
 
 // ================================
-// MAIN LOAD FUNCTION
+// LOAD DATA FROM GOOGLE SHEETS
 // ================================
 async function loadData() {
     try {
-        console.log("🔄 Fetching:", API_URL);
+        console.log("🔄 Loading data from Google Sheets...");
         
-        const res = await fetch(API_URL);
-        if (!res.ok) {
-            throw new Error(`HTTP ${res.status}`);
-        }
+        const response = await fetch(API_URL);
+        const data = await response.json();
         
-        const data = await res.json();
-        console.log("✅ Loaded:", data.length, "rows");
+        console.log("✅ Data loaded:", data.length, "rows");
         
         allAnimeData = data
             .filter(row => row.name && row.thumbnail)
@@ -31,33 +28,20 @@ async function loadData() {
                 link: row.link || ''
             }));
         
-        console.log("🎌 Valid anime:", allAnimeData.length);
+        console.log("🎌 Ready anime:", allAnimeData.length);
         
-        fillCarousel(allAnimeData);
-        fillAnimeList(allAnimeData);
+        // Ye functions tere HTML mein hone chahiye
+        if (typeof fillCarousel === 'function') fillCarousel(allAnimeData);
+        if (typeof fillAnimeList === 'function') fillAnimeList(allAnimeData);
         
     } catch (error) {
-        console.error("❌ Error:", error);
+        console.error("❌ Load error:", error);
     }
 }
 
 // ================================
-// SEARCH FUNCTION
-// ================================
-function searchAnime(query = '') {
-    const filtered = allAnimeData.filter(anime => 
-        anime.name.toLowerCase().includes(query.toLowerCase())
-    );
-    fillCarousel(filtered);
-    fillAnimeList(filtered);
-}
-
-// ================================
-// INIT
+// START ON PAGE LOAD
 // ================================
 document.addEventListener('DOMContentLoaded', loadData);
 
-// Global access
-window.loadData = loadData;
-window.searchAnime = searchAnime;
-console.log("🚀 JS Loaded Clean!");
+console.log("🚀 AnimeVerse Data Loader Ready!");
