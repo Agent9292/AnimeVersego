@@ -9,7 +9,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function setupEventListeners() {
-    // MENU BUTTON - DEBUG + FIX
     const menuBtn = document.getElementById('menu-btn');
     if (menuBtn) {
         console.log('✅ Menu button found!');
@@ -17,23 +16,14 @@ function setupEventListeners() {
             console.log('🔥 Menu clicked!');
             toggleNavbar();
         });
-    } else {
-        console.error('❌ Menu button (#menu-btn) NOT found!');
     }
-    
-    // SEARCH BUTTON
+
     const searchBtn = document.getElementById('search-btn');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', toggleSearch);
-    }
-    
-    // SEARCH INPUT
+    if (searchBtn) searchBtn.addEventListener('click', toggleSearch);
+
     const searchInput = document.getElementById('search-input');
-    if (searchInput) {
-        searchInput.addEventListener('input', handleSearch);
-    }
-    
-    // GLOBAL EVENTS
+    if (searchInput) searchInput.addEventListener('input', handleSearch);
+
     document.addEventListener('click', closeNavbarOutside);
     document.addEventListener('keydown', handleEscape);
 }
@@ -61,7 +51,7 @@ function fetchSlidesData() {
     }).catch(console.error);
 }
 
-// FIXED ANIME CARDS
+// CREATE ANIME CARDS
 function createAnimeCards(data) {
     if (data.length === 0) {
         return '<div class="no-results"><p>🔍 No anime found! Try different keywords.</p></div>';
@@ -147,16 +137,10 @@ function handleSearch() {
     }
 }
 
-// 🔥 FIXED NAVBAR TOGGLE
+// NAVBAR TOGGLE
 function toggleNavbar() {
-    console.log('🔥 Navbar toggle called!');
     const navbar = document.getElementById('side-navbar');
-    if (navbar) {
-        console.log('✅ Navbar found, toggling class...');
-        navbar.classList.toggle('active');
-    } else {
-        console.error('❌ Navbar (#side-navbar) not found!');
-    }
+    if (navbar) navbar.classList.toggle('active');
 }
 
 function closeNavbarOutside(e) {
@@ -175,6 +159,7 @@ function handleEscape(e) {
             searchInput.value = '';
             renderAnimeCards(allAnimeData);
         }
+
         const navbar = document.getElementById('side-navbar');
         if (navbar) navbar.classList.remove('active');
     }
@@ -187,12 +172,14 @@ function createSlides(data) {
         const thumbnail = row[1] || '';
         const name = row[2] || '';
         const description = row[3] || '';
-        html += `<div class="slide" style="background-image: url('${thumbnail}')">
-                    <div class="meta">
-                        <h3>${name}</h3>
-                        <p>${description}</p>
-                    </div>
-                </div>`;
+
+        html += `
+            <div class="slide" style="background-image: url('${thumbnail}')">
+                <div class="meta">
+                    <h3>${name}</h3>
+                    <p>${description}</p>
+                </div>
+            </div>`;
     });
     return html;
 }
@@ -200,6 +187,7 @@ function createSlides(data) {
 function renderSlides() {
     const carouselTrack = document.getElementById('carousel-track');
     if (!carouselTrack) return;
+
     carouselTrack.innerHTML = createSlides(slidesData);
     setupCarousel();
 }
@@ -207,6 +195,7 @@ function renderSlides() {
 function setupCarousel() {
     const dotsContainer = document.getElementById('carousel-dots');
     if (!dotsContainer) return;
+
     dotsContainer.innerHTML = '';
 
     slidesData.forEach((_, i) => {
@@ -219,28 +208,43 @@ function setupCarousel() {
 
     document.getElementById('carousel-prev')?.addEventListener('click', prevSlide);
     document.getElementById('carousel-next')?.addEventListener('click', nextSlide);
+
     updateCarousel();
+
+    // ⭐ ENABLE AUTO SLIDE
+    startAutoSlide();
 }
 
 function updateCarousel() {
     const track = document.getElementById('carousel-track');
     if (!track) return;
+
     const dots = document.querySelectorAll('.dot');
     track.style.transform = `translateX(-${currentSlide * 100}%)`;
-    dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
+
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === currentSlide);
+    });
 }
 
-function nextSlide() { 
-    currentSlide = (currentSlide + 1) % slidesData.length; 
-    updateCarousel(); 
+function nextSlide() {
+    currentSlide = (currentSlide + 1) % slidesData.length;
+    updateCarousel();
 }
 
-function prevSlide() { 
-    currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1; 
-    updateCarousel(); 
+function prevSlide() {
+    currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1;
+    updateCarousel();
 }
 
-function goToSlide(index) { 
-    currentSlide = index; 
-    updateCarousel(); 
+function goToSlide(index) {
+    currentSlide = index;
+    updateCarousel();
+}
+
+// ⭐ AUTO SLIDE FUNCTION
+function startAutoSlide() {
+    setInterval(() => {
+        nextSlide();
+    }, 4000); // Auto slide every 4 seconds
 }
