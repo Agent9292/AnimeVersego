@@ -11,11 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
 function setupEventListeners() {
     const menuBtn = document.getElementById('menu-btn');
     if (menuBtn) {
-        console.log('✅ Menu button found!');
-        menuBtn.addEventListener('click', function(e) {
-            console.log('🔥 Menu clicked!');
-            toggleNavbar();
-        });
+        menuBtn.addEventListener('click', toggleNavbar);
     }
 
     const searchBtn = document.getElementById('search-btn');
@@ -35,20 +31,26 @@ function fetchAllData() {
 
 function fetchAnimeData() {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet1&tq=select%20*`;
-    fetch(url).then(res => res.text()).then(rep => {
-        const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
-        allAnimeData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
-        renderAnimeCards(allAnimeData);
-    }).catch(console.error);
+    fetch(url)
+        .then(res => res.text())
+        .then(rep => {
+            const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
+            allAnimeData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
+            renderAnimeCards(allAnimeData);
+        })
+        .catch(console.error);
 }
 
 function fetchSlidesData() {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet2&tq=select%20*`;
-    fetch(url).then(res => res.text()).then(rep => {
-        const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
-        slidesData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
-        renderSlides();
-    }).catch(console.error);
+    fetch(url)
+        .then(res => res.text())
+        .then(rep => {
+            const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
+            slidesData = jsonData.table.rows.map(r => r.c.map(cell => cell ? cell.v : '')).slice(1);
+            renderSlides();
+        })
+        .catch(console.error);
 }
 
 // CREATE ANIME CARDS
@@ -115,14 +117,25 @@ function attachReadMoreListeners() {
     });
 }
 
+// 🔥 FIXED SEARCH BEHAVIOR (NO RIGHT SHIFT + TITLE AUTO HIDE)
 function toggleSearch() {
     const searchInput = document.getElementById('search-input');
-    if (!searchInput) return;
-    searchInput.style.display = (searchInput.style.display === 'block') ? 'none' : 'block';
+    const header = document.querySelector('header'); // ⬅ where title exists
 
-    if (searchInput.style.display === 'block') {
+    if (!searchInput) return;
+
+    const isOpen = searchInput.style.display === 'block';
+
+    if (isOpen) {
+        searchInput.style.display = 'none';
+        searchInput.value = '';
+        header.classList.remove('search-active');
+        renderAnimeCards(allAnimeData);
+    } else {
+        searchInput.style.display = 'block';
         searchInput.focus();
         searchInput.select();
+        header.classList.add('search-active');
         document.getElementById('anime-section')?.scrollIntoView({ behavior: 'smooth' });
     }
 }
@@ -132,7 +145,9 @@ function handleSearch() {
     if (searchTerm === '') {
         renderAnimeCards(allAnimeData);
     } else {
-        const filtered = allAnimeData.filter(row => row[2]?.toLowerCase().includes(searchTerm));
+        const filtered = allAnimeData.filter(row =>
+            row[2]?.toLowerCase().includes(searchTerm)
+        );
         renderAnimeCards(filtered);
     }
 }
@@ -162,6 +177,9 @@ function handleEscape(e) {
 
         const navbar = document.getElementById('side-navbar');
         if (navbar) navbar.classList.remove('active');
+
+        const header = document.querySelector('header');
+        header?.classList.remove('search-active');
     }
 }
 
@@ -210,8 +228,6 @@ function setupCarousel() {
     document.getElementById('carousel-next')?.addEventListener('click', nextSlide);
 
     updateCarousel();
-
-    // ⭐ ENABLE AUTO SLIDE
     startAutoSlide();
 }
 
@@ -242,9 +258,8 @@ function goToSlide(index) {
     updateCarousel();
 }
 
-// ⭐ AUTO SLIDE FUNCTION
 function startAutoSlide() {
     setInterval(() => {
         nextSlide();
-    }, 4000); // Auto slide every 4 seconds
+    }, 4000);
 }
