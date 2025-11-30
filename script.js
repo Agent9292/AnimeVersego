@@ -1,13 +1,17 @@
 const sheetId = '1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0';
+
 let allAnimeData = [];
 let slidesData = [];
 let currentSlide = 0;
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     fetchAllData();
     setupEventListeners();
 });
 
+// -------------------------------
+// EVENT LISTENERS
+// -------------------------------
 function setupEventListeners() {
     const menuBtn = document.getElementById('menu-btn');
     if (menuBtn) {
@@ -24,13 +28,20 @@ function setupEventListeners() {
     document.addEventListener('keydown', handleEscape);
 }
 
+// -------------------------------
+// FETCH BOTH SHEETS
+// -------------------------------
 function fetchAllData() {
     fetchAnimeData();
     fetchSlidesData();
 }
 
+// -------------------------------
+// FETCH ANIME DATA
+// -------------------------------
 function fetchAnimeData() {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet1&tq=select%20*`;
+
     fetch(url)
         .then(res => res.text())
         .then(rep => {
@@ -41,8 +52,12 @@ function fetchAnimeData() {
         .catch(console.error);
 }
 
+// -------------------------------
+// FETCH SLIDES DATA
+// -------------------------------
 function fetchSlidesData() {
     const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?sheet=Sheet2&tq=select%20*`;
+
     fetch(url)
         .then(res => res.text())
         .then(rep => {
@@ -53,7 +68,9 @@ function fetchSlidesData() {
         .catch(console.error);
 }
 
+// -------------------------------
 // CREATE ANIME CARDS
+// -------------------------------
 function createAnimeCards(data) {
     if (data.length === 0) {
         return '<div class="no-results"><p>🔍 No anime found! Try different keywords.</p></div>';
@@ -71,22 +88,23 @@ function createAnimeCards(data) {
         const showReadMore = description.length > 120;
 
         html += `
-            <div class="anime-card" data-name="${name?.toLowerCase()}">    
-                <div class="thumb">    
-                    <img src="${thumbnail}" alt="${name}" />    
-                </div>    
-                <h3>${name}</h3>    
-                <div class="description-container">    
-                    <p class="description short-desc">${shortDesc}${showReadMore ? '...' : ''}</p>    
-                    ${showReadMore ? `<span class="read-more-btn">Read more</span>` : ''}    
-                    <p class="full-desc" style="display: none;">${description}</p>    
-                </div>    
-                <div class="actions">    
-                    <a href="${link}" class="watch-btn" target="_blank">Watch Now</a>    
-                    <span class="meta-small">${no}</span>    
-                </div>    
+            <div class="anime-card" data-name="${name.toLowerCase()}">
+                <div class="thumb">
+                    <img src="${thumbnail}" alt="${name}" />
+                </div>
+                <h3>${name}</h3>
+                <div class="description-container">
+                    <p class="description short-desc">${shortDesc}${showReadMore ? '...' : ''}</p>
+                    ${showReadMore ? `<span class="read-more-btn">Read more</span>` : ''}
+                    <p class="full-desc" style="display:none;">${description}</p>
+                </div>
+                <div class="actions">
+                    <a href="${link}" class="watch-btn" target="_blank">Watch Now</a>
+                    <span class="meta-small">${no}</span>
+                </div>
             </div>`;
     });
+
     return html;
 }
 
@@ -97,8 +115,7 @@ function renderAnimeCards(data) {
 
 function attachReadMoreListeners() {
     document.querySelectorAll('.read-more-btn').forEach(btn => {
-        btn.style.cursor = 'pointer';
-        btn.onclick = function(e) {
+        btn.onclick = function (e) {
             e.stopPropagation();
             const container = this.parentElement;
             const shortDesc = container.querySelector('.short-desc');
@@ -117,10 +134,30 @@ function attachReadMoreListeners() {
     });
 }
 
-// 🔥 FIXED SEARCH BEHAVIOR (NO RIGHT SHIFT + TITLE AUTO HIDE)
+// -------------------------------
+// SEARCH TOGGLE + FILTER
+// -------------------------------
+
+// ⭐ MOBILE REORDER FUNCTION
+function reorderForMobile(isSearchOpen) {
+    const slides = document.getElementById('slides-section');
+    const anime = document.getElementById('anime-section');
+    const main = document.getElementById('main-container');
+
+    if (!slides || !anime || !main) return;
+
+    if (window.innerWidth <= 768) {
+        if (isSearchOpen) {
+            main.prepend(anime); // Anime upar
+        } else {
+            main.prepend(slides); // Slides upar
+        }
+    }
+}
+
 function toggleSearch() {
     const searchInput = document.getElementById('search-input');
-    const header = document.querySelector('header'); // ⬅ where title exists
+    const header = document.querySelector('header');
 
     if (!searchInput) return;
 
@@ -130,29 +167,31 @@ function toggleSearch() {
         searchInput.style.display = 'none';
         searchInput.value = '';
         header.classList.remove('search-active');
+        reorderForMobile(false); // Search off → slides upar
         renderAnimeCards(allAnimeData);
     } else {
         searchInput.style.display = 'block';
         searchInput.focus();
         searchInput.select();
         header.classList.add('search-active');
-        document.getElementById('anime-section')?.scrollIntoView({ behavior: 'smooth' });
+        reorderForMobile(true); // Search on → anime upar
     }
 }
 
 function handleSearch() {
     const searchTerm = this.value.toLowerCase().trim();
+
     if (searchTerm === '') {
         renderAnimeCards(allAnimeData);
     } else {
-        const filtered = allAnimeData.filter(row =>
-            row[2]?.toLowerCase().includes(searchTerm)
-        );
+        const filtered = allAnimeData.filter(row => row[2].toLowerCase().includes(searchTerm));
         renderAnimeCards(filtered);
     }
 }
 
-// NAVBAR TOGGLE
+// -------------------------------
+// NAVBAR
+// -------------------------------
 function toggleNavbar() {
     const navbar = document.getElementById('side-navbar');
     if (navbar) navbar.classList.toggle('active');
@@ -161,7 +200,10 @@ function toggleNavbar() {
 function closeNavbarOutside(e) {
     const navbar = document.getElementById('side-navbar');
     const menuBtn = document.getElementById('menu-btn');
-    if (navbar?.classList.contains('active') && !navbar.contains(e.target) && !menuBtn?.contains(e.target)) {
+
+    if (navbar?.classList.contains('active')
+        && !navbar.contains(e.target)
+        && !menuBtn.contains(e.target)) {
         navbar.classList.remove('active');
     }
 }
@@ -173,32 +215,34 @@ function handleEscape(e) {
             searchInput.style.display = 'none';
             searchInput.value = '';
             renderAnimeCards(allAnimeData);
+            reorderForMobile(false);
         }
 
         const navbar = document.getElementById('side-navbar');
         if (navbar) navbar.classList.remove('active');
-
-        const header = document.querySelector('header');
-        header?.classList.remove('search-active');
     }
 }
 
-// SLIDES
+// -------------------------------
+// SLIDES / CAROUSEL
+// -------------------------------
 function createSlides(data) {
     let html = '';
+
     data.forEach(row => {
         const thumbnail = row[1] || '';
         const name = row[2] || '';
         const description = row[3] || '';
 
         html += `
-            <div class="slide" style="background-image: url('${thumbnail}')">
+            <div class="slide" style="background-image:url('${thumbnail}')">
                 <div class="meta">
                     <h3>${name}</h3>
                     <p>${description}</p>
                 </div>
             </div>`;
     });
+
     return html;
 }
 
@@ -220,6 +264,7 @@ function setupCarousel() {
         const dot = document.createElement('button');
         dot.className = 'dot';
         if (i === 0) dot.classList.add('active');
+
         dot.addEventListener('click', () => goToSlide(i));
         dotsContainer.appendChild(dot);
     });
@@ -249,7 +294,9 @@ function nextSlide() {
 }
 
 function prevSlide() {
-    currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1;
+    currentSlide =
+        currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1;
+
     updateCarousel();
 }
 
@@ -259,7 +306,5 @@ function goToSlide(index) {
 }
 
 function startAutoSlide() {
-    setInterval(() => {
-        nextSlide();
-    }, 4000);
+    setInterval(() => nextSlide(), 4000);
 }
