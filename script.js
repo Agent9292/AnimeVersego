@@ -1,35 +1,23 @@
 /* ===============================
-    YOUR GOOGLE SHEET LINK
+    GOOGLE SHEET → CSV LINK
 ================================= */
-const ANIME_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
-const SLIDE_SHEET_URL = ANIME_SHEET_URL; // Same sheet used for slides & anime
 
+const SHEET_CSV =
+  "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/export?format=csv";
+
+let animeData = [];
 
 
 /* ===============================
-   VIEW LINK → CSV CONVERTER
+    CSV → JSON
 ================================= */
-function convertToCSV(url) {
-  const idMatch = url.match(/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (!idMatch) return null;
 
-  const sheetID = idMatch[1];
-
-  // No publish required — directly forces CSV export
-  return `https://docs.google.com/spreadsheets/d/${sheetID}/export?format=csv`;
-}
-
-
-
-/* ===============================
-    CSV → JSON PARSER
-================================= */
 function csvToJson(csv) {
   const lines = csv.trim().split("\n");
   const headers = lines[0].split(",");
 
   return lines.slice(1).map(row => {
-    const values = row.split(",");
+    let values = row.split(",");
     let obj = {};
     headers.forEach((h, i) => (obj[h.trim()] = values[i]?.trim()));
     return obj;
@@ -37,90 +25,39 @@ function csvToJson(csv) {
 }
 
 
-
-/* ===============================
-    LOAD SLIDES
-================================= */
-async function loadSlides() {
-  try {
-    const csvURL = convertToCSV(SLIDE_SHEET_URL);
-    const res = await fetch(csvURL);
-    const csv = await res.text();
-    const slides = csvToJson(csv);
-
-    const track = document.getElementById("carousel-track");
-    const dotsContainer = document.getElementById("carousel-dots");
-
-    track.innerHTML = "";
-    dotsContainer.innerHTML = "";
-
-    slides.forEach((s, i) => {
-      const slide = document.createElement("div");
-      slide.className = "slide";
-      slide.style.backgroundImage = `url('${s.Thumbnail}')`;
-
-      slide.innerHTML = `
-        <div class="meta">
-          <h3>${s.Name}</h3>
-          <p>${s.Description}</p>
-        </div>
-      `;
-
-      track.appendChild(slide);
-
-      const dot = document.createElement("div");
-      dot.className = "dot";
-      if (i === 0) dot.classList.add("active");
-      dot.dataset.index = i;
-
-      dot.addEventListener("click", () => goToSlide(i, slides.length));
-      dotsContainer.appendChild(dot);
-    });
-
-    initCarousel(slides.length);
-
-  } catch (err) {
-    console.error("Slide Load Error:", err);
-  }
-}
-
-
-
 /* ===============================
     LOAD ANIME CARDS
 ================================= */
-async function loadAnimeCards() {
+
+async function loadAnime() {
   try {
-    const csvURL = convertToCSV(ANIME_SHEET_URL);
-    const res = await fetch(csvURL);
+    const res = await fetch(SHEET_CSV);
     const csv = await res.text();
-    const animeList = csvToJson(csv);
 
-    window.ANIME_LIST = animeList; // Save for searching
-
-    renderAnimeCards(animeList);
+    animeData = csvToJson(csv); // store master list
+    showAnimeCards(animeData);
 
   } catch (err) {
-    console.error("Anime Load Error:", err);
+    console.error("LOAD ERROR:", err);
   }
 }
 
 
-
 /* ===============================
-    RENDER CARDS FUNCTION
+    SHOW CARDS
 ================================= */
-function renderAnimeCards(list) {
-  const container = document.getElementById("anime-list");
-  container.innerHTML = "";
+
+function showAnimeCards(list) {
+  const box = document.getElementById("anime-list");
+  box.innerHTML = "";
 
   list.forEach(a => {
-    const card = document.createElement("article");
+    const card = document.createElement("div");
     card.className = "anime-card";
 
     card.innerHTML = `
       <div class="thumb">
-        <img src="${a.Thumbnail}" alt="${a.Name}">
+        <img src="${a.Thumbnails}" alt="${a.Name}">
       </div>
 
       <h3>${a.Name}</h3>
@@ -135,78 +72,38 @@ function renderAnimeCards(list) {
       </div>
     `;
 
-    // Read More Toggle
+    // Expand description
     const desc = card.querySelector(".description");
     const btn = card.querySelector(".read-more");
 
-    btn.addEventListener("click", () => {
+    btn.onclick = () => {
       desc.classList.toggle("expanded");
       btn.textContent = desc.classList.contains("expanded")
         ? "Read Less"
         : "Read More";
-    });
+    };
 
-    container.appendChild(card);
+    box.appendChild(card);
   });
 }
 
 
-
 /* ===============================
-    SEARCH BAR (Name Only)
+    SEARCH — only Name
 ================================= */
+
 document.getElementById("search").addEventListener("input", function () {
   const q = this.value.toLowerCase();
 
-  const filtered = window.ANIME_LIST.filter(a =>
+  const filtered = animeData.filter(a =>
     a.Name.toLowerCase().includes(q)
   );
 
-  renderAnimeCards(filtered);
+  showAnimeCards(filtered);
 });
 
 
-
 /* ===============================
-    CAROUSEL CONTROLLER
+    INIT
 ================================= */
-let currentSlide = 0;
-
-function initCarousel(total) {
-  document.getElementById("carousel-prev").onclick = () => {
-    currentSlide = (currentSlide - 1 + total) % total;
-    updateCarousel(total);
-  };
-
-  document.getElementById("carousel-next").onclick = () => {
-    currentSlide = (currentSlide + 1) % total;
-    updateCarousel(total);
-  };
-}
-
-function goToSlide(i, total) {
-  currentSlide = i;
-  updateCarousel(total);
-}
-
-function updateCarousel(total) {
-  const track = document.getElementById("carousel-track");
-  const dots = document.querySelectorAll(".dot");
-
-  const slideWidth = track.children[0].clientWidth + 20;
-
-  track.style.transform = `translateX(-${currentSlide * slideWidth}px)`;
-
-  dots.forEach(d => d.classList.remove("active"));
-  dots[currentSlide].classList.add("active");
-}
-
-
-
-/* ===============================
-    INIT PAGE
-================================= */
-window.onload = () => {
-  loadSlides();
-  loadAnimeCards();
-};
+window.onload = loadAnime;
