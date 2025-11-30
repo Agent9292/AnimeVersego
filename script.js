@@ -39,7 +39,7 @@ function fetchSlidesData() {
   }).catch(console.error);
 }
 
-// Anime cards with Read More toggle
+// FIXED ANIME CARDS - Read More VISIBLE + Full Description
 function createAnimeCards(data) {
   if (data.length === 0) {
     return '<div class="no-results"><p>🔍 No anime found! Try different keywords.</p></div>';
@@ -53,21 +53,25 @@ function createAnimeCards(data) {
     const description = row[3] || '';
     const link = row[4] || '';
 
-    let shortDesc = description.length > 150 ? description.substring(0, 150) + '...' : description;
-    let readMoreSpan = description.length > 150 ? `<span class="read-more">Read more</span>` : '';
-      
+    // Short description (first 120 chars)
+    const shortDesc = description.substring(0, 120);
+    const showReadMore = description.length > 120;
+
     html += `
       <div class="anime-card" data-name="${name?.toLowerCase()}">
         <div class="thumb">
           <img src="${thumbnail}" alt="${name}" />
         </div>
         <h3>${name}</h3>
-        <p class="description">${shortDesc}${readMoreSpan}</p>
+        <div class="description-container">
+          <p class="description short-desc">${shortDesc}${showReadMore ? '...' : ''}</p>
+          ${showReadMore ? `<span class="read-more-btn">Read more</span>` : ''}
+          <p class="full-desc" style="display: none;">${description}</p>
+        </div>
         <div class="actions">
           <a href="${link}" class="watch-btn" target="_blank">Watch Now</a>
           <span class="meta-small">${no}</span>
         </div>
-        <p class="full-desc" style="display:none;">${description}</p>
       </div>`;
   });
   return html;
@@ -78,20 +82,26 @@ function renderAnimeCards(data) {
   attachReadMoreListeners();
 }
 
+// PERFECT READ MORE FUNCTIONALITY
 function attachReadMoreListeners() {
-  document.querySelectorAll('.read-more').forEach(btn => {
-    btn.onclick = function() {
-      const desc = this.parentElement;
-      const fullDesc = desc.nextElementSibling; // full-desc p
-      if (desc.classList.contains('expanded')) {
-        desc.innerHTML = desc.innerText.substring(0, 150) + '... <span class="read-more">Read more</span>';
-        fullDesc.style.display = 'none';
-        attachReadMoreListeners();
+  document.querySelectorAll('.read-more-btn').forEach(btn => {
+    btn.style.cursor = 'pointer';
+    btn.onclick = function(e) {
+      e.stopPropagation();
+      const container = this.parentElement;
+      const shortDesc = container.querySelector('.short-desc');
+      const fullDesc = container.querySelector('.full-desc');
+      
+      if (this.textContent === 'Read more') {
+        // Show full description
+        shortDesc.style.display = 'none';
+        fullDesc.style.display = 'block';
+        this.textContent = 'Read less';
       } else {
-        desc.classList.add('expanded');
-        desc.innerHTML = fullDesc.innerText + ' <span class="read-more">Read less</span>';
+        // Show short description
+        shortDesc.style.display = 'block';
         fullDesc.style.display = 'none';
-        attachReadMoreListeners();
+        this.textContent = 'Read more';
       }
     };
   });
@@ -143,7 +153,7 @@ function handleEscape(e) {
   }
 }
 
-// Slides (unchanged)
+// Slides (same)
 function createSlides(data) {
   let html = '';
   data.forEach(row => {
@@ -183,7 +193,6 @@ function setupCarousel() {
 
   document.getElementById('carousel-prev')?.addEventListener('click', prevSlide);
   document.getElementById('carousel-next')?.addEventListener('click', nextSlide);
-
   updateCarousel();
 }
 
@@ -191,22 +200,10 @@ function updateCarousel() {
   const track = document.getElementById('carousel-track');
   if (!track) return;
   const dots = document.querySelectorAll('.dot');
-  
   track.style.transform = `translateX(-${currentSlide * 100}%)`;
   dots.forEach((dot, i) => dot.classList.toggle('active', i === currentSlide));
 }
 
-function nextSlide() {
-  currentSlide = (currentSlide + 1) % slidesData.length;
-  updateCarousel();
-}
-
-function prevSlide() {
-  currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1;
-  updateCarousel();
-}
-
-function goToSlide(index) {
-  currentSlide = index;
-  updateCarousel();
-}
+function nextSlide() { currentSlide = (currentSlide + 1) % slidesData.length; updateCarousel(); }
+function prevSlide() { currentSlide = currentSlide === 0 ? slidesData.length - 1 : currentSlide - 1; updateCarousel(); }
+function goToSlide(index) { currentSlide = index; updateCarousel(); }
