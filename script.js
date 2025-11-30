@@ -4,10 +4,10 @@
 ================================= */
 
 // Anime List Sheet → publish to CSV and paste link
-const ANIME_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=drivesdk";
+const ANIME_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
 
 // Slides Sheet → publish to CSV and paste link
-const SLIDE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=drivesdk";
+const SLIDE_SHEET_URL = "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/edit?usp=sharing";
 
 
 
