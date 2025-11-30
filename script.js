@@ -60,5 +60,4 @@ document.addEventListener('DOMContentLoaded', loadData);
 // Global access
 window.loadData = loadData;
 window.searchAnime = searchAnime;
-
 console.log("🚀 JS Loaded Clean!");
