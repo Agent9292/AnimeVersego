@@ -435,3 +435,36 @@ section h2{
   }
 }
 
+/* No Results State */
+.no-results {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+/* Read More Styling */
+.read-more {
+  color: var(--accent);
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: underline;
+  margin-left: 4px;
+}
+
+.read-more:hover {
+  color: var(--accent-2);
+}
+
+.description.expanded {
+  max-height: none !important;
+}
+
+/* Existing description fix */
+.anime-card .description {
+  max-height: 3.2em;
+  overflow: hidden;
+  position: relative;
+}
+
