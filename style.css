@@ -593,6 +593,23 @@ section h2{
   font-size: 14px;
 }
 
+/* Search bar smooth inline appearance */
+#search-input {
+    width: 100%;
+    max-width: 220px;  /* left side se space le */
+    transition: all 0.25s ease;
+}
+
+/* When search is open */
+header.search-active #search-input {
+    max-width: 100%;   /* mobile par full width */
+}
+
+/* Hide title when search active */
+header.search-active #site-title {
+    display: none;
+}
+
 
 
 
