@@ -1,109 +1,80 @@
-/* ===============================
-    GOOGLE SHEET → CSV LINK
-================================= */
+// ================================
+// GOOGLE SHEET CONFIG - Working!
+// ================================
+const SHEET_ID = "1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0";
+const SHEET_NAME = "Sheet1";
+const API_URL = `https://opensheet.elk.sh/${SHEET_ID}/${SHEET_NAME}`;
 
-const SHEET_CSV =
-  "https://docs.google.com/spreadsheets/d/1uUGWMgw8oNTswDJBz8se0HxPMEqRk0keJtFNlhaZoj0/export?format=csv";
+// Global data storage
+let allAnimeData = [];
 
-let animeData = [];
+// ================================
+// FIXED LOAD DATA FUNCTION
+// ================================
+async function loadData() {
+    try {
+        console.log("🔄 Fetching from:", API_URL);
+        
+        const res = await fetch(API_URL);
+        
+        if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        
+        const data = await res.json();
+        console.log("✅ Sheet Data Loaded:", data.length, "rows");
 
+        // Filter valid anime data (name & thumbnail required)
+        allAnimeData = data.filter(row => 
+            row.name && row.name.trim() && 
+            row.thumbnail && row.thumbnail.trim()
+        ).map(row => ({
+            name: row.name || '',
+            thumbnail: row.thumbnail || '',
+            description: row.description || '',
+            link: row.link || ''
+        }));
 
-/* ===============================
-    CSV → JSON
-================================= */
+        console.log("🎌 Valid Anime:", allAnimeData.length);
 
-function csvToJson(csv) {
-  const lines = csv.trim().split("\n");
-  const headers = lines[0].split(",");
+        if (allAnimeData.length === 0) {
+            console.warn("⚠️ No valid anime data found!");
+        }
 
-  return lines.slice(1).map(row => {
-    let values = row.split(",");
-    let obj = {};
-    headers.forEach((h, i) => (obj[h.trim()] = values[i]?.trim()));
-    return obj;
-  });
+        // Call your functions
+        fillCarousel(allAnimeData);
+        fillAnimeList(allAnimeData);
+        
+    } catch (error) {
+        console.error("❌ Error loading sheet:", error);
+        document.getElementById('anime-list')?.innerHTML = 
+            '<div style="text-align:center;color:#ff6b6b;">Failed to load anime data!</div>';
+    }
 }
 
-
-/* ===============================
-    LOAD ANIME CARDS
-================================= */
-
-async function loadAnime() {
-  try {
-    const res = await fetch(SHEET_CSV);
-    const csv = await res.text();
-
-    animeData = csvToJson(csv); // store master list
-    showAnimeCards(animeData);
-
-  } catch (err) {
-    console.error("LOAD ERROR:", err);
-  }
+// ================================
+// SEARCH FUNCTION (Bonus)
+// ================================
+function searchAnime(query = '') {
+    const filtered = allAnimeData.filter(anime => 
+        anime.name.toLowerCase().includes(query.toLowerCase().trim())
+    );
+    
+    fillCarousel(filtered);
+    fillAnimeList(filtered);
+    
+    console.log(`🔍 Found ${filtered.length} anime for "${query}"`);
 }
 
-
-/* ===============================
-    SHOW CARDS
-================================= */
-
-function showAnimeCards(list) {
-  const box = document.getElementById("anime-list");
-  box.innerHTML = "";
-
-  list.forEach(a => {
-    const card = document.createElement("div");
-    card.className = "anime-card";
-
-    card.innerHTML = `
-      <div class="thumb">
-        <img src="${a.Thumbnails}" alt="${a.Name}">
-      </div>
-
-      <h3>${a.Name}</h3>
-
-      <p class="description">
-        ${a.Description}
-        <span class="read-more">Read More</span>
-      </p>
-
-      <div class="actions">
-        <a class="watch-btn" href="${a.Link}" target="_blank">Watch Now</a>
-      </div>
-    `;
-
-    // Expand description
-    const desc = card.querySelector(".description");
-    const btn = card.querySelector(".read-more");
-
-    btn.onclick = () => {
-      desc.classList.toggle("expanded");
-      btn.textContent = desc.classList.contains("expanded")
-        ? "Read Less"
-        : "Read More";
-    };
-
-    box.appendChild(card);
-  });
-}
-
-
-/* ===============================
-    SEARCH — only Name
-================================= */
-
-document.getElementById("search").addEventListener("input", function () {
-  const q = this.value.toLowerCase();
-
-  const filtered = animeData.filter(a =>
-    a.Name.toLowerCase().includes(q)
-  );
-
-  showAnimeCards(filtered);
+// ================================
+// INIT - Auto load on page ready
+// ================================
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🚀 AnimeVerse JS Ready!');
+    loadData();
 });
 
-
-/* ===============================
-    INIT
-================================= */
-window.onload = loadAnime;
+// Export functions for global use
+window.loadData = loadData;
+window.searchAnime = searchAnime;
+window.allAnimeData = () => allAnimeData;
